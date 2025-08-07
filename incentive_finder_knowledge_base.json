@@ -1,0 +1,80 @@
+{
+  "FL": {
+    "utility": "OUC (Orlando Utilities Commission)",
+    "programs": [
+      {
+        "sector": "commercial/industrial",
+        "project_types": [
+          "lighting",
+          "HVAC",
+          "compressed air",
+          "process improvements"
+        ],
+        "incentive": "$250/kW for lighting, $550/kW + $0.032/kWh for non-lighting",
+        "link": "https://www.ouc.com/solutions-programs/savings/rebates/commercial-industrial-incentive-program"
+      }
+    ]
+  },
+  "TN": {
+    "utility": "Tennessee Valley Authority (TVA EnergyRight)",
+    "programs": [
+      {
+        "sector": "industrial",
+        "project_types": [
+          "HVAC",
+          "VFDs",
+          "custom projects",
+          "energy management"
+        ],
+        "incentive": "Custom incentives + demand response opportunities",
+        "link": "https://energyright.com/business-industry/incentives/"
+      }
+    ]
+  },
+  "NY": {
+    "utility": "NYSERDA",
+    "programs": [
+      {
+        "sector": "commercial/industrial",
+        "project_types": [
+          "EV charging",
+          "fleet electrification",
+          "energy audits"
+        ],
+        "incentive": "Varies by program: vouchers, tax credits, and grants",
+        "link": "https://www.nyserda.ny.gov/PutEnergyToWork/Energy-Program-and-Incentives/Clean-Transportation-Programs-and-Incentives"
+      }
+    ]
+  },
+  "IL": {
+    "utility": "ComEd",
+    "programs": [
+      {
+        "sector": "commercial/industrial",
+        "project_types": [
+          "lighting",
+          "controls",
+          "compressed air",
+          "SEM"
+        ],
+        "incentive": "Prescriptive and custom incentives; SEM participation support",
+        "link": "https://www.comed.com/WaysToSave/ForYourBusiness/Pages/Incentives.aspx"
+      }
+    ]
+  },
+  "CT": {
+    "utility": "Eversource UI (CT)",
+    "programs": [
+      {
+        "sector": "commercial/industrial",
+        "project_types": [
+          "electrification",
+          "HVAC",
+          "energy efficiency"
+        ],
+        "incentive": "Custom and prescriptive incentives; Energy assessments available",
+        "link": "https://www.energizect.com/your-business/solutions-list"
+      }
+    ]
+  }
+}
