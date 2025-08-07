@@ -1,68 +1,76 @@
 
 import streamlit as st
+from sentence_transformers import SentenceTransformer
+from sklearn.metrics.pairwise import cosine_similarity
+import faiss
 import json
+import numpy as np
 
-st.set_page_config(page_title="Utility Incentive Finder", page_icon="💡")
+st.set_page_config(page_title="RAG Incentive Finder", page_icon="🔍")
 
-st.title("Utility Incentive Finder Bot 💡")
-st.write("Select your NAICS industry and one or more U.S. states (non–West Coast only for now), and I’ll show matching utility incentives.")
+st.title("🔍 RAG Utility Incentive Finder Bot (Offline Prototype)")
+st.write("Ask me anything about industrial or commercial utility incentives (NY, IL, FL, CT, TN).")
 
-# Load data
-@st.cache_data
-def load_data():
-    with open("incentive_finder_knowledge_base.json", "r") as f:
-        kb = json.load(f)
-    with open("naics_to_projects.json", "r") as f:
-        naics_map = json.load(f)
-    return kb, naics_map
+# Load knowledge base
+with open("incentive_finder_knowledge_base.json", "r") as f:
+    kb = json.load(f)
 
-kb, naics_map = load_data()
+# Flatten the KB into chunks
+chunks = []
+chunk_map = []
+for state, data in kb.items():
+    for prog in data["programs"]:
+        text = f"In {state}, {data['utility']} offers incentives for {prog['sector']} customers on projects like {', '.join(prog['project_types'])}. Incentive details: {prog['incentive']}. More at: {prog['link']}"
+        chunks.append(text)
+        chunk_map.append({
+            "state": state,
+            "text": text,
+            "link": prog["link"]
+        })
 
-# Build dropdown options
-naics_options = {f"{code} – {data['industry']}": code for code, data in naics_map.items()}
-naics_selection = st.selectbox("Select your industry (NAICS)", list(naics_options.keys()))
-selected_naics = naics_options[naics_selection]
+# Load embedding model
+@st.cache_resource
+def load_model_and_index():
+    model = SentenceTransformer("all-MiniLM-L6-v2")
+    embeddings = model.encode(chunks)
+    dim = embeddings.shape[1]
+    index = faiss.IndexFlatL2(dim)
+    index.add(np.array(embeddings).astype("float32"))
+    return model, index, embeddings
 
-# Multi-select for states
-state_input = st.multiselect(
-    "Select one or more states (2-letter codes)",
-    options=["FL", "TN", "NY", "IL", "CT"]
-)
+model, index, embeddings = load_model_and_index()
 
-def find_incentives(states, naics_code):
-    output = []
+# Simple keyword-aware context retriever
+def retrieve_context(question, top_k=3):
+    q_embedding = model.encode([question])
+    _, indices = index.search(np.array(q_embedding).astype("float32"), top_k)
+    return [chunks[i] for i in indices[0]]
 
-    industry = naics_map[naics_code]["industry"]
-    relevant_projects = set([p.lower() for p in naics_map[naics_code]["project_types"]])
-    output.append(f"**NAICS {naics_code} – {industry}**")
-    output.append(f"Relevant project types: {', '.join(relevant_projects)}\n")
+# Fake local LLM generator (replace with real LLM for full RAG pipeline)
+def fake_llm_answer(question, contexts):
+    response = f"Based on what I found:
 
-    for state in states:
-        state_key = state.strip().upper()
-        if state_key not in kb:
-            output.append(f"❌ No data for state '{state_key}'")
-            continue
+"
+    for ctx in contexts:
+        response += f"- {ctx}
 
-        entry = kb[state_key]
-        matches = []
-        for program in entry["programs"]:
-            if any(pt.lower() in relevant_projects for pt in program["project_types"]):
-                matches.append(f"""**Utility:** {entry['utility']}
-Eligible Projects: {", ".join(program['project_types'])}
-Incentive: {program['incentive']}
-🔗 [Program Link]({program['link']})""")
+"
+    response += "Let me know if you'd like links or help comparing programs."
+    return response
 
-        if matches:
-            output.append(f"### {state_key}")
-            output.extend(matches)
-        else:
-            output.append(f"⚠️ No matching programs found in {state_key} for NAICS {naics_code}")
+# Chat UI
+if "messages" not in st.session_state:
+    st.session_state.messages = []
 
-    return "\n\n".join(output)
+for msg in st.session_state.messages:
+    st.chat_message(msg["role"]).markdown(msg["content"])
 
-# Show results
-if selected_naics and state_input:
-    response = find_incentives(state_input, selected_naics)
-    st.markdown(response)
-else:
-    st.info("Please select both a NAICS industry and at least one state.")
+prompt = st.chat_input("Ask me a question about incentives...")
+
+if prompt:
+    st.chat_message("user").markdown(prompt)
+    context = retrieve_context(prompt)
+    answer = fake_llm_answer(prompt, context)
+    st.chat_message("assistant").markdown(answer)
+    st.session_state.messages.append({"role": "user", "content": prompt})
+    st.session_state.messages.append({"role": "assistant", "content": answer})
