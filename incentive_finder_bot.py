@@ -1,71 +1,68 @@
 
 import streamlit as st
 import json
-from difflib import get_close_matches
 
 st.set_page_config(page_title="Utility Incentive Finder", page_icon="💡")
 
 st.title("Utility Incentive Finder Bot 💡")
-st.write("I'm here to help you find utility programs and incentives based on your industry and location (non–West Coast only for now).")
+st.write("Select your NAICS industry and one or more U.S. states (non–West Coast only for now), and I’ll show matching utility incentives.")
 
-# Load the knowledge base
+# Load data
 @st.cache_data
-def load_kb():
+def load_data():
     with open("incentive_finder_knowledge_base.json", "r") as f:
-        return json.load(f)
+        kb = json.load(f)
+    with open("naics_to_projects.json", "r") as f:
+        naics_map = json.load(f)
+    return kb, naics_map
 
-kb = load_kb()
+kb, naics_map = load_data()
 
-# Helper function
-def find_incentives(state_input, sector_input=None):
-    state_key = state_input.strip().upper()
-    if state_key not in kb:
-        return f"Sorry, I don't have any data for '{state_input}' yet. Try FL, TN, NY, IL, or CT."
+# Build dropdown options
+naics_options = {f"{code} – {data['industry']}": code for code, data in naics_map.items()}
+naics_selection = st.selectbox("Select your industry (NAICS)", list(naics_options.keys()))
+selected_naics = naics_options[naics_selection]
 
-    entry = kb[state_key]
-    results = []
-    for program in entry["programs"]:
-        if sector_input:
-            match = get_close_matches(sector_input.lower(), [program["sector"].lower()], n=1, cutoff=0.4)
-            if not match:
-                continue
-        details = f"""
-**Utility:** {entry['utility']}  
-**Eligible Projects:** {", ".join(program['project_types'])}  
-**Incentive:** {program['incentive']}  
-🔗 [Program Link]({program['link']})
-"""
-        results.append(details)
-    return "\n\n".join(results) if results else f"No matching programs found for sector '{sector_input}'."
+# Multi-select for states
+state_input = st.multiselect(
+    "Select one or more states (2-letter codes)",
+    options=["FL", "TN", "NY", "IL", "CT"]
+)
 
-# Chat session state
-if "messages" not in st.session_state:
-    st.session_state.messages = []
+def find_incentives(states, naics_code):
+    output = []
 
-for msg in st.session_state.messages:
-    st.chat_message(msg["role"]).markdown(msg["content"])
+    industry = naics_map[naics_code]["industry"]
+    relevant_projects = set([p.lower() for p in naics_map[naics_code]["project_types"]])
+    output.append(f"**NAICS {naics_code} – {industry}**")
+    output.append(f"Relevant project types: {', '.join(relevant_projects)}\n")
 
-# Input
-prompt = st.chat_input("Ask me about utility incentives...")
+    for state in states:
+        state_key = state.strip().upper()
+        if state_key not in kb:
+            output.append(f"❌ No data for state '{state_key}'")
+            continue
 
-if prompt:
-    st.chat_message("user").markdown(prompt)
-    # Simple parsing for state and sector
-    state = None
-    sector = None
-    for word in prompt.upper().split():
-        if word in kb:
-            state = word
-    if "industrial" in prompt.lower():
-        sector = "industrial"
-    elif "commercial" in prompt.lower():
-        sector = "commercial"
+        entry = kb[state_key]
+        matches = []
+        for program in entry["programs"]:
+            if any(pt.lower() in relevant_projects for pt in program["project_types"]):
+                matches.append(f"""**Utility:** {entry['utility']}
+Eligible Projects: {", ".join(program['project_types'])}
+Incentive: {program['incentive']}
+🔗 [Program Link]({program['link']})""")
 
-    if state:
-        response = find_incentives(state, sector)
-    else:
-        response = "Please tell me the state you're in (e.g., FL, NY, IL) and your sector (industrial or commercial)."
+        if matches:
+            output.append(f"### {state_key}")
+            output.extend(matches)
+        else:
+            output.append(f"⚠️ No matching programs found in {state_key} for NAICS {naics_code}")
 
-    st.chat_message("assistant").markdown(response)
-    st.session_state.messages.append({"role": "user", "content": prompt})
-    st.session_state.messages.append({"role": "assistant", "content": response})
+    return "\n\n".join(output)
+
+# Show results
+if selected_naics and state_input:
+    response = find_incentives(state_input, selected_naics)
+    st.markdown(response)
+else:
+    st.info("Please select both a NAICS industry and at least one state.")
