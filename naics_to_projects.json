@@ -1,0 +1,47 @@
+{
+  "311": {
+    "industry": "Food Manufacturing",
+    "project_types": [
+      "compressed air",
+      "refrigeration",
+      "process improvements",
+      "lighting"
+    ]
+  },
+  "321": {
+    "industry": "Wood Product Manufacturing",
+    "project_types": [
+      "dust collection",
+      "compressed air",
+      "motor upgrades",
+      "lighting"
+    ]
+  },
+  "336": {
+    "industry": "Transportation Equipment Manufacturing",
+    "project_types": [
+      "welding ventilation",
+      "compressed air",
+      "paint booth upgrades",
+      "VFDs"
+    ]
+  },
+  "541": {
+    "industry": "Professional, Scientific, and Technical Services",
+    "project_types": [
+      "HVAC",
+      "lighting",
+      "building automation",
+      "energy audits"
+    ]
+  },
+  "611": {
+    "industry": "Educational Services",
+    "project_types": [
+      "lighting",
+      "HVAC",
+      "controls",
+      "retro-commissioning"
+    ]
+  }
+}
