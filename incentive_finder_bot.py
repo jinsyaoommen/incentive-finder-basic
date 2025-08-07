@@ -46,15 +46,11 @@ def retrieve_context(question, top_k=3):
     _, indices = index.search(np.array(q_embedding).astype("float32"), top_k)
     return [chunks[i] for i in indices[0]]
 
-# Fake local LLM generator (replace with real LLM for full RAG pipeline)
+# Placeholder for a local LLM
 def fake_llm_answer(question, contexts):
-    response = f"Based on what I found:
-
-"
+    response = "Based on what I found:\n\n"
     for ctx in contexts:
-        response += f"- {ctx}
-
-"
+        response += f"- {ctx}\n\n"
     response += "Let me know if you'd like links or help comparing programs."
     return response
 
